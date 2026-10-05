@@ -21,6 +21,9 @@ export default function PagamentoPage() {
   const horario = searchParams.get("horario");
 
   const { booking } = useBooking();
+  const dataFormatada = data
+  ? data.split("-").reverse().join(".")
+  : "Não informada";
 
   const consultorio = consultorios.find(
     (item) => item.id === consultorioId
@@ -186,7 +189,7 @@ export default function PagamentoPage() {
                 </p>
 
                 <p className="mt-1 text-sm text-[#27231F]">
-                  {data ?? "Não informada"}
+                  {dataFormatada}
                 </p>
               </div>
 

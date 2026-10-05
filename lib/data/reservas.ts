@@ -18,6 +18,12 @@ export type CriarReservaData = {
 export async function criarReserva(
   dados: CriarReservaData
 ) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  console.log("SESSÃO SUPABASE:", session);
+
   const { data, error } = await supabase
     .from("reservas")
     .insert({
@@ -76,6 +82,21 @@ export async function buscarReservaPorId(id: string) {
     .select("*")
     .eq("id", id)
     .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function cancelarReserva(id: string) {
+  const { data, error } = await supabase.rpc(
+    "cancelar_reserva_expirada",
+    {
+      p_reserva_id: id,
+    }
+  );
 
   if (error) {
     throw new Error(error.message);

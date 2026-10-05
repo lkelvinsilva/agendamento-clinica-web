@@ -33,17 +33,20 @@ export function CalendarBooking({
    * Mais adiante vamos retirar essa configuração do código
    * e fazer o Dashboard controlar os horários através do Supabase.
    */
-  const horarios = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-  ];
+  const turnos = [
+  {
+    nome: "Manhã",
+    horarios: ["08:00", "09:00", "10:00", "11:00"],
+  },
+  {
+    nome: "Tarde",
+    horarios: ["13:00", "14:00", "15:00", "16:00"],
+  },
+  {
+    nome: "Noite",
+    horarios: ["18:00", "19:00", "20:00", "21:00"],
+  },
+]; 
 
   useEffect(() => {
     async function carregarHorariosOcupados() {
@@ -281,38 +284,50 @@ export function CalendarBooking({
                 Verificando horários disponíveis...
               </p>
             ) : (
-              <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {horarios.map((horario) => {
-                  const horarioOcupado =
-                    horariosOcupados.includes(horario);
+              <div className="mt-6 space-y-8">
+  {turnos.map((turno) => (
+    <div key={turno.nome}>
+      <div className="mb-3">
+        <p className="text-sm font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+          {turno.nome}
+        </p>
+      </div>
 
-                  const selecionado =
-                    horarioSelecionado === horario;
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        {turno.horarios.map((horario) => {
+          const horarioOcupado =
+            horariosOcupados.includes(horario);
 
-                  return (
-                    <button
-                      key={horario}
-                      type="button"
-                      disabled={
-                        horarioOcupado ||
-                        carregandoHorarios
-                      }
-                      onClick={() =>
-                        setHorarioSelecionado(horario)
-                      }
-                      className={`border px-4 py-3 text-sm transition ${
-                        horarioOcupado
-                          ? "cursor-not-allowed border-[#E5DDD1] bg-[#F7F3EC] text-[#C8C0B6]"
-                          : selecionado
-                            ? "border-[#9A7952] bg-[#C8A97E] text-white"
-                            : "border-[#E5DDD1] bg-white text-[#27231F] hover:border-[#B99A6B]"
-                      }`}
-                    >
-                      {horario}
-                    </button>
-                  );
-                })}
-              </div>
+          const selecionado =
+            horarioSelecionado === horario;
+
+          return (
+            <button
+              key={horario}
+              type="button"
+              disabled={
+                horarioOcupado ||
+                carregandoHorarios
+              }
+              onClick={() =>
+                setHorarioSelecionado(horario)
+              }
+              className={`border px-4 py-3 text-sm transition ${
+                horarioOcupado
+                  ? "cursor-not-allowed border-[#E5DDD1] bg-[#F7F3EC] text-[#C8C0B6]"
+                  : selecionado
+                    ? "border-[#9A7952] bg-[#C8A97E] text-white"
+                    : "border-[#E5DDD1] bg-white text-[#27231F] hover:border-[#B99A6B]"
+              }`}
+            >
+              {horario}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  ))}
+</div>
             )}
           </>
         )}

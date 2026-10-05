@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import { buscarReservaPorId } from "@/lib/data/reservas";
+import {
+  buscarReservaPorId,
+  cancelarReserva,
+} from "@/lib/data/reservas";
 import { consultorios } from "@/lib/data/consultorios";
 
 type Reserva = {
@@ -34,6 +37,7 @@ export default function ConfirmacaoPage() {
   const [reserva, setReserva] = useState<Reserva | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const [tempoRestante, setTempoRestante] = useState(15 * 60);
 
   useEffect(() => {
     async function carregarReserva() {
@@ -60,6 +64,51 @@ export default function ConfirmacaoPage() {
 
     carregarReserva();
   }, [reservaId]);
+
+   useEffect(() => {
+  if (!reserva || reserva.status !== "pendente") {
+    return;
+  }
+
+  function atualizarContador() {
+    const criadaEm = new Date(reserva!.created_at).getTime();
+    const prazo = criadaEm + 15 * 60 * 1000;
+    const agora = Date.now();
+
+    const restante = Math.max(
+  0,
+  Math.floor((prazo - agora) / 1000)
+);
+
+setTempoRestante(restante);
+
+if (restante === 0) {
+  clearInterval(intervalo);
+
+  cancelarReserva(reserva!.id)
+    .then(() => {
+      setReserva((reservaAtual) =>
+        reservaAtual
+          ? { ...reservaAtual, status: "cancelada" }
+          : reservaAtual
+      );
+    })
+    .catch((error) => {
+      console.error(
+        "Erro ao cancelar reserva expirada:",
+        error
+      );
+    });
+}
+  }
+
+  atualizarContador();
+
+  const intervalo = setInterval(atualizarContador, 1000);
+
+  return () => clearInterval(intervalo);
+}, [reserva]);
+
 
   if (carregando) {
     return (
@@ -103,6 +152,7 @@ export default function ConfirmacaoPage() {
     );
   }
 
+ 
   const consultorio = consultorios.find(
     (item) => item.id === reserva.consultorio_id
   );
@@ -112,6 +162,14 @@ export default function ConfirmacaoPage() {
   const dataFormatada = new Date(
     `${reserva.data}T00:00:00`
   ).toLocaleDateString("pt-BR");
+
+  const minutos = Math.floor(tempoRestante / 60)
+  .toString()
+  .padStart(2, "0");
+
+const segundos = (tempoRestante % 60)
+  .toString()
+  .padStart(2, "0");
 
   return (
     <main className="min-h-screen bg-[#F7F3EC] px-6 py-12">
@@ -227,14 +285,55 @@ export default function ConfirmacaoPage() {
             </div>
           </div>
 
-          {/* Aviso */}
-          <div className="mx-auto mt-6 max-w-lg border border-[#E5DDD1] px-5 py-4">
-            <p className="text-sm leading-6 text-[#746C62]">
-              Sua reserva permanece pendente até que o
-              pagamento seja identificado. Depois disso,
-              ela poderá ser confirmada.
-            </p>
-          </div>
+          {/* PRAZO PARA PAGAMENTO */}
+<div className="mx-auto mt-6 max-w-lg border border-[#C8A97E] bg-[#F7F3EC] px-5 py-5">
+  <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+    Prazo para pagamento
+  </p>
+
+  {tempoRestante > 0 ? (
+    <>
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        Você tem até 15 minutos para realizar o pagamento
+        e garantir o horário escolhido.
+      </p>
+
+      <div className="mt-4 text-center">
+        <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
+          Tempo restante
+        </p>
+
+        <p className="mt-1 font-serif text-4xl text-[#27231F]">
+          {minutos}:{segundos}
+        </p>
+      </div>
+
+      <p className="mt-4 text-xs leading-5 text-[#746C62]">
+  Caso o pagamento não seja realizado dentro desse
+  prazo, a reserva será cancelada e o horário ficará
+  novamente disponível.
+</p>
+
+<Link
+  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&horario=${reserva.horario.slice(0, 5)}`}
+  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
+>
+  Ir para pagamento
+</Link>
+    </>
+  ) : (
+    <div className="mt-3">
+      <p className="text-sm font-medium text-red-700">
+        O prazo para pagamento expirou.
+      </p>
+
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        Esta reserva será cancelada e o horário ficará
+        novamente disponível.
+      </p>
+    </div>
+  )}
+</div>
 
           {/* Voltar */}
           <Link

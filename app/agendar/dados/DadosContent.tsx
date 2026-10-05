@@ -61,6 +61,9 @@ export default function DadosPage() {
   const consultorioId = searchParams.get("consultorio");
   const data = searchParams.get("data");
   const horario = searchParams.get("horario");
+  const dataFormatada = data
+  ? data.split("-").reverse().join(".")
+  : "Não informada";
 
   const { setDadosCliente } = useBooking();
 
@@ -144,8 +147,8 @@ export default function DadosPage() {
               </p>
 
               <p className="mt-1 text-lg text-[#27231F]">
-                {data ?? "Não informada"}
-              </p>
+  {dataFormatada}
+</p>
 
               <div className="my-6 border-t border-[#E5DDD1]" />
 
