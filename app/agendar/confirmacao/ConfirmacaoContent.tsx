@@ -39,6 +39,10 @@ export default function ConfirmacaoPage() {
   const [erro, setErro] = useState("");
   const [tempoRestante, setTempoRestante] = useState(15 * 60);
 
+  // =========================================================
+  // CARREGAR RESERVA
+  // =========================================================
+
   useEffect(() => {
     async function carregarReserva() {
       if (!reservaId) {
@@ -65,50 +69,87 @@ export default function ConfirmacaoPage() {
     carregarReserva();
   }, [reservaId]);
 
-   useEffect(() => {
+  // =========================================================
+  // CONTADOR + CANCELAMENTO AUTOMÁTICO
+  // =========================================================
+
+ useEffect(() => {
   if (!reserva || reserva.status !== "pendente") {
     return;
   }
 
-  function atualizarContador() {
-    const criadaEm = new Date(reserva!.created_at).getTime();
+  let cancelando = false;
+
+  async function atualizarContador() {
+    const criadaEm = new Date(
+      reserva!.created_at
+    ).getTime();
+
+    // TESTE TEMPORÁRIO: 10 segundos
     const prazo = criadaEm + 15 * 60 * 1000;
+
     const agora = Date.now();
 
     const restante = Math.max(
-  0,
-  Math.floor((prazo - agora) / 1000)
-);
+      0,
+      Math.floor((prazo - agora) / 1000)
+    );
 
-setTempoRestante(restante);
+    setTempoRestante(restante);
 
-if (restante === 0) {
-  clearInterval(intervalo);
+    if (restante === 0 && !cancelando) {
+      cancelando = true;
 
-  cancelarReserva(reserva!.id)
-    .then(() => {
-      setReserva((reservaAtual) =>
-        reservaAtual
-          ? { ...reservaAtual, status: "cancelada" }
-          : reservaAtual
+      console.log("⏰ PRAZO EXPIRADO!");
+      console.log(
+        "ID DA RESERVA:",
+        reserva!.id
       );
-    })
-    .catch((error) => {
-      console.error(
-        "Erro ao cancelar reserva expirada:",
-        error
-      );
-    });
-}
+
+      try {
+        const resultado = await cancelarReserva(
+          reserva!.id
+        );
+
+        console.log(
+          "✅ RESERVA CANCELADA:",
+          resultado
+        );
+
+        setReserva((reservaAtual) =>
+          reservaAtual
+            ? {
+                ...reservaAtual,
+                status: "cancelada",
+              }
+            : reservaAtual
+        );
+      } catch (error) {
+        console.error(
+          "❌ ERRO AO CANCELAR:",
+          error
+        );
+
+        cancelando = false;
+      }
+    }
   }
 
   atualizarContador();
 
-  const intervalo = setInterval(atualizarContador, 1000);
+  const intervalo = setInterval(
+    atualizarContador,
+    1000
+  );
 
-  return () => clearInterval(intervalo);
+  return () => {
+    clearInterval(intervalo);
+  };
 }, [reserva]);
 
+  // =========================================================
+  // CARREGANDO
+  // =========================================================
 
   if (carregando) {
     return (
@@ -121,6 +162,10 @@ if (restante === 0) {
       </main>
     );
   }
+
+  // =========================================================
+  // ERRO / RESERVA NÃO ENCONTRADA
+  // =========================================================
 
   if (erro || !reserva) {
     return (
@@ -152,7 +197,10 @@ if (restante === 0) {
     );
   }
 
- 
+  // =========================================================
+  // DADOS DA RESERVA
+  // =========================================================
+
   const consultorio = consultorios.find(
     (item) => item.id === reserva.consultorio_id
   );
@@ -163,19 +211,29 @@ if (restante === 0) {
     `${reserva.data}T00:00:00`
   ).toLocaleDateString("pt-BR");
 
-  const minutos = Math.floor(tempoRestante / 60)
-  .toString()
-  .padStart(2, "0");
+  const minutos = Math.floor(
+    tempoRestante / 60
+  )
+    .toString()
+    .padStart(2, "0");
 
-const segundos = (tempoRestante % 60)
-  .toString()
-  .padStart(2, "0");
+  const segundos = (
+    tempoRestante % 60
+  )
+    .toString()
+    .padStart(2, "0");
+
+  // =========================================================
+  // INTERFACE
+  // =========================================================
 
   return (
     <main className="min-h-screen bg-[#F7F3EC] px-6 py-12">
       <div className="mx-auto flex min-h-[80vh] max-w-3xl items-center justify-center">
         <div className="w-full border border-[#E5DDD1] bg-white p-8 text-center sm:p-12">
+
           {/* Ícone */}
+
           <div className="mx-auto flex h-14 w-14 items-center justify-center border border-[#C8A97E] bg-[#F7F3EC]">
             <span className="text-2xl text-[#9A7952]">
               ✓
@@ -183,6 +241,7 @@ const segundos = (tempoRestante % 60)
           </div>
 
           {/* Título */}
+
           <p className="mt-8 text-xs font-medium uppercase tracking-[0.18em] text-[#9A7952]">
             Reserva realizada
           </p>
@@ -197,8 +256,11 @@ const segundos = (tempoRestante % 60)
           </p>
 
           {/* Resumo */}
+
           <div className="mx-auto mt-8 max-w-lg border border-[#E5DDD1] bg-[#F7F3EC] p-6 text-left">
+
             {/* Número */}
+
             <div>
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Número da reserva
@@ -210,6 +272,7 @@ const segundos = (tempoRestante % 60)
             </div>
 
             {/* Consultório */}
+
             <div className="mt-5 border-t border-[#E5DDD1] pt-5">
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Consultório
@@ -222,6 +285,7 @@ const segundos = (tempoRestante % 60)
             </div>
 
             {/* Cliente */}
+
             <div className="mt-5 border-t border-[#E5DDD1] pt-5">
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Cliente
@@ -239,6 +303,7 @@ const segundos = (tempoRestante % 60)
             </div>
 
             {/* Data */}
+
             <div className="mt-5 border-t border-[#E5DDD1] pt-5">
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Data
@@ -250,6 +315,7 @@ const segundos = (tempoRestante % 60)
             </div>
 
             {/* Horário */}
+
             <div className="mt-5 border-t border-[#E5DDD1] pt-5">
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Horário
@@ -261,6 +327,7 @@ const segundos = (tempoRestante % 60)
             </div>
 
             {/* Status */}
+
             <div className="mt-5 border-t border-[#E5DDD1] pt-5">
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Status
@@ -274,74 +341,85 @@ const segundos = (tempoRestante % 60)
             </div>
 
             {/* Valor */}
+
             <div className="mt-5 border-t border-[#E5DDD1] pt-5">
               <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
                 Valor
               </p>
 
               <p className="mt-1 font-serif text-2xl text-[#27231F]">
-                R$ {valorReserva.toFixed(2).replace(".", ",")}
+                R${" "}
+                {valorReserva
+                  .toFixed(2)
+                  .replace(".", ",")}
               </p>
             </div>
           </div>
 
           {/* PRAZO PARA PAGAMENTO */}
-<div className="mx-auto mt-6 max-w-lg border border-[#C8A97E] bg-[#F7F3EC] px-5 py-5">
-  <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
-    Prazo para pagamento
-  </p>
 
-  {tempoRestante > 0 ? (
-    <>
-      <p className="mt-2 text-sm leading-6 text-[#746C62]">
-        Você tem até 15 minutos para realizar o pagamento
-        e garantir o horário escolhido.
-      </p>
+          <div className="mx-auto mt-6 max-w-lg border border-[#C8A97E] bg-[#F7F3EC] px-5 py-5">
 
-      <div className="mt-4 text-center">
-        <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
-          Tempo restante
-        </p>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+              Prazo para pagamento
+            </p>
 
-        <p className="mt-1 font-serif text-4xl text-[#27231F]">
-          {minutos}:{segundos}
-        </p>
-      </div>
+            {reserva.status === "pendente" &&
+            tempoRestante > 0 ? (
+              <>
+                <p className="mt-2 text-sm leading-6 text-[#746C62]">
+                  Você tem até 15 minutos para realizar o
+                  pagamento e garantir o horário escolhido.
+                </p>
 
-      <p className="mt-4 text-xs leading-5 text-[#746C62]">
-  Caso o pagamento não seja realizado dentro desse
-  prazo, a reserva será cancelada e o horário ficará
-  novamente disponível.
-</p>
+                <div className="mt-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
+                    Tempo restante
+                  </p>
 
-<Link
-  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&horario=${reserva.horario.slice(0, 5)}`}
-  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
->
-  Ir para pagamento
-</Link>
-    </>
-  ) : (
-    <div className="mt-3">
-      <p className="text-sm font-medium text-red-700">
-        O prazo para pagamento expirou.
-      </p>
+                  <p className="mt-1 font-serif text-4xl text-[#27231F]">
+                    {minutos}:{segundos}
+                  </p>
+                </div>
 
-      <p className="mt-2 text-sm leading-6 text-[#746C62]">
-        Esta reserva será cancelada e o horário ficará
-        novamente disponível.
-      </p>
-    </div>
-  )}
-</div>
+                <p className="mt-4 text-xs leading-5 text-[#746C62]">
+                  Caso o pagamento não seja realizado dentro
+                  desse prazo, a reserva será cancelada e o
+                  horário ficará novamente disponível.
+                </p>
+
+                <Link
+                  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&horario=${reserva.horario.slice(0, 5)}`}
+                  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
+                >
+                  Ir para pagamento
+                </Link>
+              </>
+            ) : (
+              <div className="mt-3">
+
+                <p className="text-sm font-medium text-red-700">
+                  O prazo para pagamento expirou.
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-[#746C62]">
+                  Esta reserva foi cancelada e o horário ficará
+                  novamente disponível.
+                </p>
+
+              </div>
+            )}
+          </div>
 
           {/* Voltar */}
+
           <Link
             href="/"
             className="mt-8 inline-block bg-[#27231F] px-7 py-3 text-sm font-medium text-white transition hover:bg-[#4A423B]"
           >
             Voltar para o início
           </Link>
+
         </div>
       </div>
     </main>
