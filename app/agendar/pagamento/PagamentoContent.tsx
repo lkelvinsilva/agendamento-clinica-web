@@ -19,6 +19,8 @@ export default function PagamentoPage() {
   const consultorioId = searchParams.get("consultorio");
   const data = searchParams.get("data");
   const horario = searchParams.get("horario");
+  const modalidade = searchParams.get("modalidade") ?? "horario";
+  const turno = searchParams.get("turno");
 
   const { booking } = useBooking();
   const dataFormatada = data
@@ -29,21 +31,26 @@ export default function PagamentoPage() {
     (item) => item.id === consultorioId
   );
 
-  const valorReserva = consultorio?.price ?? 50;
+  const valorReserva =
+  modalidade === "diaria"
+    ? 900
+    : modalidade === "turno"
+      ? 300
+      : 120;
 
   async function confirmarReserva() {
     if (
-      !consultorioId ||
-      !data ||
-      !horario ||
-      !booking.nome ||
-      !booking.telefone ||
-      !booking.email ||
-      !booking.cpf
-    ) {
-      setErro("Os dados da reserva estão incompletos.");
-      return;
-    }
+  !consultorioId ||
+  !data ||
+  !booking.nome ||
+  !booking.telefone ||
+  !booking.email ||
+  !booking.cpf ||
+  (modalidade === "horario" && (!horario || horario === "null"))
+) {
+  setErro("Os dados da reserva estão incompletos.");
+  return;
+}
 
     try {
       setErro("");
@@ -53,6 +60,8 @@ export default function PagamentoPage() {
         consultorioId,
         data,
         horario,
+        modalidade,
+        turno,
         nome: booking.nome,
         telefone: booking.telefone,
         email: booking.email,

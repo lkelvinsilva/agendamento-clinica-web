@@ -61,6 +61,8 @@ export default function DadosPage() {
   const consultorioId = searchParams.get("consultorio");
   const data = searchParams.get("data");
   const horario = searchParams.get("horario");
+  const modalidade = searchParams.get("modalidade") ?? "horario";
+  const turno = searchParams.get("turno");
   const dataFormatada = data
   ? data.split("-").reverse().join(".")
   : "Não informada";
@@ -97,9 +99,21 @@ export default function DadosPage() {
       observacoes: dados.observacoes ?? "",
     });
 
-    router.push(
-      `/agendar/pagamento?consultorio=${consultorioId}&data=${data}&horario=${horario}`
-    );
+    const parametros = new URLSearchParams({
+  consultorio: consultorioId ?? "",
+  data: data ?? "",
+  modalidade,
+});
+
+if (horario && horario !== "null") {
+  parametros.set("horario", horario);
+}
+
+if (turno) {
+  parametros.set("turno", turno);
+}
+
+router.push(`/agendar/pagamento?${parametros.toString()}`);
   }
 
   return (
