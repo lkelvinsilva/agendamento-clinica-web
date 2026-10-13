@@ -12,6 +12,7 @@ import { criarReserva } from "@/lib/data/reservas";
 export default function PagamentoPage() {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [formaPagamento, setFormaPagamento] = useState<"cartao" | "pix">("cartao");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,7 +69,7 @@ export default function PagamentoPage() {
         cpf: booking.cpf,
         observacoes: booking.observacoes,
         valor: valorReserva,
-        formaPagamento: "cartao",
+        formaPagamento,
       });
 
       router.push(
@@ -123,41 +124,71 @@ export default function PagamentoPage() {
               Escolha como pagar
             </h2>
 
-            {/* CARTÃO */}
-            <div className="mt-6 border border-[#C8A97E] bg-[#F7F3EC] p-5">
-              <div className="flex items-start gap-4">
-                <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-[#9A7952]">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#9A7952]" />
-                </div>
+            
+{/* CARTÃO */}
+<button
+  type="button"
+  onClick={() => setFormaPagamento("cartao")}
+  className={`mt-6 block w-full border p-5 text-left transition ${
+    formaPagamento === "cartao"
+      ? "border-[#C8A97E] bg-[#F7F3EC]"
+      : "border-[#E5DDD1] bg-white hover:border-[#C8A97E]"
+  }`}
+>
+  <div className="flex items-start gap-4">
+    <div className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border ${
+      formaPagamento === "cartao"
+        ? "border-[#9A7952]"
+        : "border-[#D4CCC2]"
+    }`}>
+      {formaPagamento === "cartao" && (
+        <div className="h-2.5 w-2.5 rounded-full bg-[#9A7952]" />
+      )}
+    </div>
 
-                <div>
-                  <p className="text-sm font-medium text-[#27231F]">
-                    Cartão de crédito
-                  </p>
+    <div>
+      <p className="text-sm font-medium text-[#27231F]">
+        Cartão de crédito
+      </p>
+      <p className="mt-1 text-sm leading-6 text-[#746C62]">
+        Opção de pagamento por cartão.
+      </p>
+    </div>
+  </div>
+</button>
 
-                  <p className="mt-1 text-sm leading-6 text-[#746C62]">
-                    Pagamento seguro para confirmar sua reserva.
-                  </p>
-                </div>
-              </div>
-            </div>
+{/* PIX */}
+<button
+  type="button"
+  onClick={() => setFormaPagamento("pix")}
+  className={`mt-4 block w-full border p-5 text-left transition ${
+    formaPagamento === "pix"
+      ? "border-[#C8A97E] bg-[#F7F3EC]"
+      : "border-[#E5DDD1] bg-white hover:border-[#C8A97E]"
+  }`}
+>
+  <div className="flex items-start gap-4">
+    <div className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border ${
+      formaPagamento === "pix"
+        ? "border-[#9A7952]"
+        : "border-[#D4CCC2]"
+    }`}>
+      {formaPagamento === "pix" && (
+        <div className="h-2.5 w-2.5 rounded-full bg-[#9A7952]" />
+      )}
+    </div>
 
-            {/* PIX */}
-            <div className="mt-4 border border-[#E5DDD1] bg-white p-5">
-              <div className="flex items-start gap-4">
-                <div className="mt-1 h-5 w-5 rounded-full border border-[#D4CCC2]" />
+    <div>
+      <p className="text-sm font-medium text-[#27231F]">
+        Pix
+      </p>
+      <p className="mt-1 text-sm leading-6 text-[#746C62]">
+        Opção de pagamento por Pix.
+      </p>
+    </div>
+  </div>
+</button>
 
-                <div>
-                  <p className="text-sm font-medium text-[#27231F]">
-                    Pix
-                  </p>
-
-                  <p className="mt-1 text-sm leading-6 text-[#746C62]">
-                    Você receberá as instruções para pagamento após confirmar.
-                  </p>
-                </div>
-              </div>
-            </div>
 
             {/* SEGURANÇA */}
             <div className="mt-8 border-t border-[#E5DDD1] pt-6">
