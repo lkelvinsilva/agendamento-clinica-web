@@ -210,11 +210,17 @@ export default function AgendarPage() {
                                 : "a partir de"}
                         </p>
 
-                        <p className="mt-1 text-lg font-medium text-[#27231F]">
-                          {modalidadeSelecionada === "horario"
-                            ? formatPrice(consultorio.price)
-                            : "A definir"}
-                        </p>
+                        
+<p className="mt-1 text-lg font-medium text-[#27231F]">
+  {modalidadeSelecionada === "horario"
+    ? formatPrice(consultorio.price)
+    : modalidadeSelecionada === "turno"
+      ? "R$ 300,00"
+      : modalidadeSelecionada === "diaria"
+        ? "R$ 900,00"
+        : "Selecione a modalidade"}
+</p>
+
                       </div>
                     </div>
 

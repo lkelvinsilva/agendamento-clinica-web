@@ -6,7 +6,7 @@ export const consultorios: Consultorio[] = [
     name: "Consultório 01",
     description:
       "Ambiente confortável e funcional para realizar seus atendimentos profissionais.",
-    price: 50,
+    price: 120,
     features: [
       "Mesa de atendimento",
       "Wi-Fi",
@@ -20,7 +20,7 @@ export const consultorios: Consultorio[] = [
     name: "Consultório 02",
     description:
       "Espaço reservado e confortável para oferecer uma experiência profissional aos seus pacientes.",
-    price: 50,
+    price: 120,
     features: [
       "Mesa de atendimento",
       "Wi-Fi",

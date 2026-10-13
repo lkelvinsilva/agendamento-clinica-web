@@ -12,7 +12,9 @@ import { criarReserva } from "@/lib/data/reservas";
 export default function PagamentoPage() {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [formaPagamento, setFormaPagamento] = useState<"cartao" | "pix">("cartao");
+  const [formaPagamento, setFormaPagamento] = useState<
+  "cartao" | "pix" | "debito"
+>("pix");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -157,6 +159,41 @@ export default function PagamentoPage() {
   </div>
 </button>
 
+{/* CARTÃO DE DÉBITO */}
+<button
+  type="button"
+  onClick={() => setFormaPagamento("debito")}
+  aria-pressed={formaPagamento === "debito"}
+  className={`mt-4 block w-full border p-5 text-left transition ${
+    formaPagamento === "debito"
+      ? "border-[#C8A97E] bg-[#F7F3EC]"
+      : "border-[#E5DDD1] bg-white hover:border-[#C8A97E]"
+  }`}
+>
+  <div className="flex items-start gap-4">
+    <div
+      className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border ${
+        formaPagamento === "debito"
+          ? "border-[#9A7952]"
+          : "border-[#D4CCC2]"
+      }`}
+    >
+      {formaPagamento === "debito" && (
+        <div className="h-2.5 w-2.5 rounded-full bg-[#9A7952]" />
+      )}
+    </div>
+
+    <div>
+      <p className="text-sm font-medium text-[#27231F]">
+        Cartão de débito
+      </p>
+      <p className="mt-1 text-sm leading-6 text-[#746C62]">
+        Pagamento com cartão de débito após a integração.
+      </p>
+    </div>
+  </div>
+</button>
+
 {/* PIX */}
 <button
   type="button"
@@ -188,6 +225,45 @@ export default function PagamentoPage() {
     </div>
   </div>
 </button>
+
+
+
+{/* INSTRUÇÕES DA FORMA DE PAGAMENTO */}
+<div className="mt-6 border border-[#E5DDD1] bg-[#F7F3EC] p-5">
+  {formaPagamento === "pix" ? (
+    <>
+      <h3 className="text-sm font-medium text-[#27231F]">
+        Pagamento via Pix
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        O QR Code e o código Pix copia e cola estarão disponíveis
+        quando a integração de pagamento for ativada.
+        Por enquanto, nenhuma cobrança será realizada.
+      </p>
+    </>
+  ) : formaPagamento === "cartao" ? (
+    <>
+      <h3 className="text-sm font-medium text-[#27231F]">
+        Cartão de crédito
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        O processamento do cartão e as opções de parcelamento
+        estarão disponíveis após a integração de pagamento.
+        Nenhuma cobrança será realizada neste momento.
+      </p>
+    </>
+  ) : (
+    <>
+      <h3 className="text-sm font-medium text-[#27231F]">
+        Cartão de débito
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        O pagamento por débito dependerá do provedor escolhido.
+        Essa opção ainda não processa pagamentos reais.
+      </p>
+    </>
+  )}
+</div>
 
 
             {/* SEGURANÇA */}
