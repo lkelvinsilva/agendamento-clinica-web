@@ -14,7 +14,9 @@ type Reserva = {
   id: string;
   consultorio_id: string;
   data: string;
-  horario: string;
+  horario: string | null;
+  modalidade: string;
+  turno: string | null;
 
   nome: string;
   telefone: string;
@@ -322,7 +324,19 @@ export default function ConfirmacaoPage() {
               </p>
 
               <p className="mt-1 text-base text-[#27231F]">
-                {reserva.horario.slice(0, 5)}
+                {reserva.modalidade === "diaria"
+  ? "Diária completa"
+  : reserva.modalidade === "turno"
+    ? reserva.turno === "manha"
+      ? "Manhã (08:00 às 12:00)"
+      : reserva.turno === "tarde"
+        ? "Tarde (13:00 às 17:00)"
+        : reserva.turno === "noite"
+          ? "Noite (18:00 às 21:00)"
+          : "Turno não informado"
+    : reserva.horario
+      ? reserva.horario.slice(0, 5)
+      : "Horário não informado"}
               </p>
             </div>
 
@@ -389,7 +403,7 @@ export default function ConfirmacaoPage() {
                 </p>
 
                 <Link
-                  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&horario=${reserva.horario.slice(0, 5)}`}
+                  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&modalidade=${reserva.modalidade}${reserva.horario ? `&horario=${reserva.horario.slice(0, 5)}` : ""}${reserva.turno ? `&turno=${reserva.turno}` : ""}`}
                   className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
                 >
                   Ir para pagamento
