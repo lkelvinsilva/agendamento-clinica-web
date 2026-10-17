@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { buscarHorariosOcupados } from "@/lib/data/reservas";
 
 type Modalidade = "horario" | "turno" | "diaria";
 
@@ -22,6 +21,7 @@ export function CalendarBooking({
   const [turnoSelecionado, setTurnoSelecionado] = useState<string | null>(null);
   const [horariosOcupados, setHorariosOcupados] = useState<string[]>([]);
   const [carregandoHorarios, setCarregandoHorarios] = useState(false);
+  const [erroHorarios, setErroHorarios] = useState("");
 
   const turnos = [
     {
@@ -50,32 +50,68 @@ export function CalendarBooking({
     ).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
   }
 
-  useEffect(() => {
-    async function carregarHorariosOcupados() {
-      if (!dataSelecionada || !consultorioId) {
-        setHorariosOcupados([]);
-        return;
+  
+useEffect(() => {
+  let ativo = true;
+
+  async function carregarHorariosOcupados() {
+    if (!dataSelecionada || !consultorioId) {
+      setHorariosOcupados([]);
+      setErroHorarios("");
+      setCarregandoHorarios(false);
+      return;
+    }
+
+    setCarregandoHorarios(true);
+    setErroHorarios("");
+    setHorariosOcupados([]);
+    setHorarioSelecionado(null);
+    setTurnoSelecionado(null);
+
+    try {
+      const parametros = new URLSearchParams({
+        consultorioId,
+        data: formatarData(dataSelecionada),
+      });
+
+      const response = await fetch(
+        `/api/reservas/horarios?${parametros.toString()}`,
+        { cache: "no-store" }
+      );
+
+      const resultado = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          resultado.error ?? "Erro ao consultar horários."
+        );
       }
 
-      try {
-        setCarregandoHorarios(true);
+      if (ativo) {
+        setHorariosOcupados(resultado.horarios);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar horários:", error);
 
-        const horarios = await buscarHorariosOcupados(
-          consultorioId,
-          formatarData(dataSelecionada)
+      if (ativo) {
+        setErroHorarios(
+          "Não foi possível verificar a disponibilidade. Tente novamente."
         );
-
-        setHorariosOcupados(horarios);
-      } catch (error) {
-        console.error("Erro ao carregar horários ocupados:", error);
-        setHorariosOcupados([]);
-      } finally {
+      }
+    } finally {
+      if (ativo) {
         setCarregandoHorarios(false);
       }
     }
+  }
 
-    carregarHorariosOcupados();
-  }, [dataSelecionada, consultorioId]);
+  carregarHorariosOcupados();
+
+  return () => {
+    ativo = false;
+  };
+}, [dataSelecionada, consultorioId]);
+
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -272,12 +308,16 @@ export function CalendarBooking({
         </div>
 
         {dataSelecionada && (
-          <>
-            {carregandoHorarios ? (
-              <p className="mt-5 text-sm text-[#746C62]">
-                Verificando horários disponíveis...
-              </p>
-            ) : (
+  <>
+    {carregandoHorarios ? (
+      <p className="mt-5 text-sm text-[#746C62]">
+        Verificando horários disponíveis...
+      </p>
+    ) : erroHorarios ? (
+      <p role="alert" className="mt-5 text-sm text-red-700">
+        {erroHorarios}
+      </p>
+    ) : (
               <div className="mt-6 space-y-8">
                 {/* RESERVA POR HORÁRIO */}
                 {modalidade === "horario" && (

@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { consultorios } from "@/lib/data/consultorios";
 import { useBooking } from "@/components/agendamento/BookingContext";
-import { criarReserva } from "@/lib/data/reservas";
+
 
 export default function PagamentoPage() {
   const [erro, setErro] = useState("");
@@ -59,26 +59,56 @@ export default function PagamentoPage() {
       setErro("");
       setSalvando(true);
 
-      const reserva = await criarReserva({
-        consultorioId,
-        data,
-        horario,
-        modalidade,
-        turno,
-        nome: booking.nome,
-        telefone: booking.telefone,
-        email: booking.email,
-        cpf: booking.cpf,
-        observacoes: booking.observacoes,
-        valor: valorReserva,
-        formaPagamento,
-      });
+      const response = await fetch("/api/reservas", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    consultorioId,
+    data,
+    horario,
+    modalidade,
+    turno,
+    nome: booking.nome,
+    telefone: booking.telefone,
+    email: booking.email,
+    cpf: booking.cpf,
+    observacoes: booking.observacoes,
+    valor: valorReserva,
+    formaPagamento,
+  }),
+});
 
-      router.push(
-        `/agendar/confirmacao?reserva=${reserva.id}`
-      );
-    } catch (error) {
-      console.error(error);
+
+const resultado = await response.json();
+
+if (!response.ok) {
+  throw new Error(
+    resultado.mensagem ||
+      resultado.error ||
+      "Erro ao salvar a reserva."
+  );
+}
+
+// A API retorna a reserva diretamente
+const reserva = resultado;
+
+if (!response.ok) {
+  console.error("Status da API:", response.status);
+  console.error("Resposta da API:", resultado);
+
+  throw new Error(
+    resultado.mensagem ||
+      resultado.error ||
+      "Erro ao salvar a reserva."
+  );
+}
+
+router.push(
+  `/agendar/confirmacao?reserva=${reserva.id}`
+);
+} catch (error) {
 
       setErro(
         error instanceof Error
