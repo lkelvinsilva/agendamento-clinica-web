@@ -383,7 +383,7 @@ router.push(
                   <p className="mt-1 text-xs text-[#746C62]">
                     {booking.email}
                   </p>
-                )}npx tsc --noEmit
+                )}
 
                 {booking.telefone && (
                   <p className="mt-1 text-xs text-[#746C62]">
