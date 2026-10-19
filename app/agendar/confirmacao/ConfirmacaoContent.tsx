@@ -4,17 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import {
-  buscarReservaPorId,
-  cancelarReserva,
-} from "@/lib/data/reservas";
 import { consultorios } from "@/lib/data/consultorios";
+
 
 type Reserva = {
   id: string;
-  consultorio_id: string;
-  data: string;
-  horario: string | null;
+  consultorioId: string;
+  data: Date;
+  horario: Date | null;
   modalidade: string;
   turno: string | null;
 
@@ -24,12 +21,13 @@ type Reserva = {
   cpf: string;
   observacoes: string | null;
 
-  valor: number;
+  valor: import("@/generated/prisma/client").Prisma.Decimal;
   status: string;
-  forma_pagamento: string | null;
+  formaPagamento: string | null;
 
-  created_at: string;
+  createdAt: Date;
 };
+
 
 export default function ConfirmacaoPage() {
   const searchParams = useSearchParams();
@@ -54,9 +52,14 @@ export default function ConfirmacaoPage() {
       }
 
       try {
-        const dados = await buscarReservaPorId(reservaId);
+        const resposta = await fetch(`/api/reservas/${reservaId}`);
 
-        setReserva(dados);
+if (!resposta.ok) {
+  throw new Error("Não foi possível carregar a reserva.");
+}
+
+const dados = await resposta.json();
+setReserva(dados);
       } catch (error) {
         console.error("Erro ao carregar reserva:", error);
 
@@ -84,7 +87,7 @@ export default function ConfirmacaoPage() {
 
   async function atualizarContador() {
     const criadaEm = new Date(
-      reserva!.created_at
+      reserva!.createdAt
     ).getTime();
 
     // TESTE TEMPORÁRIO: 10 segundos
@@ -109,9 +112,18 @@ export default function ConfirmacaoPage() {
       );
 
       try {
-        const resultado = await cancelarReserva(
-          reserva!.id
-        );
+  const resposta = await fetch(
+    `/api/reservas/${reserva!.id}/cancelar`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!resposta.ok) {
+    throw new Error("Não foi possível cancelar a reserva.");
+  }
+
+  const resultado = await resposta.json();
 
         console.log(
           "✅ RESERVA CANCELADA:",
@@ -204,14 +216,17 @@ export default function ConfirmacaoPage() {
   // =========================================================
 
   const consultorio = consultorios.find(
-    (item) => item.id === reserva.consultorio_id
+    (item) => item.id === reserva.consultorioId
   );
 
   const valorReserva = Number(reserva.valor);
 
-  const dataFormatada = new Date(
-    `${reserva.data}T00:00:00`
-  ).toLocaleDateString("pt-BR");
+  const dataFormatada = new Date(reserva.data).toLocaleDateString(
+  "pt-BR",
+  {
+    timeZone: "UTC",
+  }
+);
 
   const minutos = Math.floor(
     tempoRestante / 60
@@ -282,7 +297,7 @@ export default function ConfirmacaoPage() {
 
               <p className="mt-1 text-base text-[#27231F]">
                 {consultorio?.name ??
-                  reserva.consultorio_id}
+                  reserva.consultorioId}
               </p>
             </div>
 
@@ -335,8 +350,8 @@ export default function ConfirmacaoPage() {
           ? "Noite (18:00 às 21:00)"
           : "Turno não informado"
     : reserva.horario
-      ? reserva.horario.slice(0, 5)
-      : "Horário não informado"}
+  ? new Date(reserva.horario).toISOString().slice(11, 16)
+  : "Horário não informado"}
               </p>
             </div>
 
@@ -402,12 +417,14 @@ export default function ConfirmacaoPage() {
                   horário ficará novamente disponível.
                 </p>
 
-                <Link
-                  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&modalidade=${reserva.modalidade}${reserva.horario ? `&horario=${reserva.horario.slice(0, 5)}` : ""}${reserva.turno ? `&turno=${reserva.turno}` : ""}`}
-                  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
-                >
-                  Ir para pagamento
-                </Link>
+                
+<Link
+  href={`/agendar/pagamento?consultorio=${reserva.consultorioId}&data=${String(reserva.data).slice(0, 10)}&modalidade=${reserva.modalidade}${reserva.horario ? `&horario=${new Date(reserva.horario).toISOString().slice(11, 16)}` : ""}${reserva.turno ? `&turno=${reserva.turno}` : ""}`}
+  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
+>
+  Ir para pagamento
+</Link>
+
               </>
             ) : (
               <div className="mt-3">

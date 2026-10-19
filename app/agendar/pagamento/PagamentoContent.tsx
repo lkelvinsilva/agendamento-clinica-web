@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { consultorios } from "@/lib/data/consultorios";
 import { useBooking } from "@/components/agendamento/BookingContext";
-import { criarReserva } from "@/lib/data/reservas";
+
 
 export default function PagamentoPage() {
   const [erro, setErro] = useState("");
@@ -34,12 +34,31 @@ export default function PagamentoPage() {
     (item) => item.id === consultorioId
   );
 
-  const valorReserva =
-  modalidade === "diaria"
-    ? 900
-    : modalidade === "turno"
-      ? 300
-      : 120;
+    const valorReserva =
+    modalidade === "diaria"
+      ? 900
+      : modalidade === "turno"
+        ? 300
+        : 120;
+
+  // TAXA FICTÍCIA: usada somente para visualizar o cálculo.
+  // Não representa a taxa contratada da InfinitePay.
+  const TAXA_CARTAO_TESTE = 0.042;
+
+  const valorFinal =
+    formaPagamento === "cartao"
+      ? Math.round(
+          (valorReserva / (1 - TAXA_CARTAO_TESTE)) * 100
+        ) / 100
+      : valorReserva;
+
+  const acrescimoCartao = valorFinal - valorReserva;
+
+  const formatarMoeda = (valor: number) =>
+    valor.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
 
   async function confirmarReserva() {
     if (
@@ -59,26 +78,56 @@ export default function PagamentoPage() {
       setErro("");
       setSalvando(true);
 
-      const reserva = await criarReserva({
-        consultorioId,
-        data,
-        horario,
-        modalidade,
-        turno,
-        nome: booking.nome,
-        telefone: booking.telefone,
-        email: booking.email,
-        cpf: booking.cpf,
-        observacoes: booking.observacoes,
-        valor: valorReserva,
-        formaPagamento,
-      });
+      const response = await fetch("/api/reservas", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    consultorioId,
+    data,
+    horario,
+    modalidade,
+    turno,
+    nome: booking.nome,
+    telefone: booking.telefone,
+    email: booking.email,
+    cpf: booking.cpf,
+    observacoes: booking.observacoes,
+    valor: valorReserva,
+    formaPagamento,
+  }),
+});
 
-      router.push(
-        `/agendar/confirmacao?reserva=${reserva.id}`
-      );
-    } catch (error) {
-      console.error(error);
+
+const resultado = await response.json();
+
+if (!response.ok) {
+  throw new Error(
+    resultado.mensagem ||
+      resultado.error ||
+      "Erro ao salvar a reserva."
+  );
+}
+
+// A API retorna a reserva diretamente
+const reserva = resultado;
+
+if (!response.ok) {
+  console.error("Status da API:", response.status);
+  console.error("Resposta da API:", resultado);
+
+  throw new Error(
+    resultado.mensagem ||
+      resultado.error ||
+      "Erro ao salvar a reserva."
+  );
+}
+
+router.push(
+  `/agendar/confirmacao?reserva=${reserva.id}`
+);
+} catch (error) {
 
       setErro(
         error instanceof Error
@@ -334,7 +383,7 @@ export default function PagamentoPage() {
                   <p className="mt-1 text-xs text-[#746C62]">
                     {booking.email}
                   </p>
-                )}
+                )}npx tsc --noEmit
 
                 {booking.telefone && (
                   <p className="mt-1 text-xs text-[#746C62]">
@@ -342,21 +391,38 @@ export default function PagamentoPage() {
                   </p>
                 )}
               </div>
-
-              {/* TOTAL */}
-              <div className="border-t border-[#E5DDD1] pt-5">
-                <div className="flex items-end justify-between gap-4">
-                  <span className="text-sm text-[#746C62]">
-                    Total
-                  </span>
-
-                  <span className="font-serif text-2xl text-[#27231F]">
-                    R${" "}
-                    {valorReserva.toFixed(2).replace(".", ",")}
-                  </span>
                 </div>
-              </div>
-            </div>
+              {/* TOTAL */}
+<div className="border-t border-[#E5DDD1] pt-5 space-y-3">
+  <div className="flex justify-between gap-4 text-sm text-[#746C62]">
+    <span>Valor da reserva</span>
+    <span>{formatarMoeda(valorReserva)}</span>
+  </div>
+
+  {formaPagamento === "cartao" && (
+    <>
+      <div className="flex justify-between gap-4 text-sm text-[#746C62]">
+        <span>Acréscimo simulado do cartão</span>
+        <span>{formatarMoeda(acrescimoCartao)}</span>
+      </div>
+
+      <p className="text-xs leading-5 text-[#746C62]">
+        Taxa ilustrativa de 4,2%, usada apenas para teste.
+        O valor real será definido após a integração.
+      </p>
+    </>
+  )}
+
+  <div className="flex items-end justify-between gap-4 border-t border-[#E5DDD1] pt-4">
+    <span className="text-sm text-[#746C62]">
+      Total a pagar
+    </span>
+
+    <span className="font-serif text-2xl text-[#27231F]">
+      {formatarMoeda(valorFinal)}
+    </span>
+  </div>
+</div>
 
             {/* ERRO */}
             {erro && (
