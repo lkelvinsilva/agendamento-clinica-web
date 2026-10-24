@@ -53,9 +53,9 @@ export function Navbar() {
           href="/"
           className={`group inline-flex items-center rounded font-serif text-[27px] font-medium tracking-[-0.025em] text-[#27231F] ${focusRing}`}
         >
-          Clínica
+          Clínica 
           <span className="ml-0.5 text-[#B99A6B] transition-colors duration-300 group-hover:text-[#9A7952]">
-            .
+             Livv
           </span>
         </Link>
 

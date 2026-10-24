@@ -1,27 +1,59 @@
 
 import { NextResponse } from "next/server";
-import { criarReserva } from "@/lib/data/reservas-prisma";
+import {
+  criarReserva,
+  type CriarReservaData,
+} from "@/lib/data/reservas-prisma";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const dados = await request.json();
+    const dados: unknown = await request.json();
 
-console.log("Dados recebidos para criar reserva:", {
-  consultorioId: dados.consultorioId,
-  data: dados.data,
-  horario: dados.horario,
-  modalidade: dados.modalidade,
-  turno: dados.turno,
-  nome: dados.nome ? "preenchido" : "VAZIO",
-  telefone: dados.telefone ? "preenchido" : "VAZIO",
-  email: dados.email ? "preenchido" : "VAZIO",
-  cpf: dados.cpf ? "preenchido" : "VAZIO",
-  formaPagamento: dados.formaPagamento,
-});
+    if (
+      !dados ||
+      typeof dados !== "object" ||
+      Array.isArray(dados)
+    ) {
+      return NextResponse.json(
+        { mensagem: "Os dados da reserva são inválidos." },
+        { status: 400 }
+      );
+    }
 
-const reserva = await criarReserva(dados);
+    const campos = dados as Record<string, unknown>;
+
+    const camposObrigatorios = [
+      "consultorioId",
+      "data",
+      "horario",
+      "modalidade",
+      "nome",
+      "telefone",
+      "email",
+      "cpf",
+      "valor",
+      "formaPagamento",
+    ];
+
+    const faltando = camposObrigatorios.some(
+      (campo) =>
+        campos[campo] === undefined ||
+        campos[campo] === null ||
+        campos[campo] === ""
+    );
+
+    if (faltando) {
+      return NextResponse.json(
+        { mensagem: "Os dados obrigatórios da reserva estão incompletos." },
+        { status: 400 }
+      );
+    }
+
+    const reserva = await criarReserva(
+      campos as unknown as CriarReservaData
+    );
 
     return NextResponse.json(reserva, { status: 201 });
   } catch (error) {
@@ -32,9 +64,6 @@ const reserva = await criarReserva(dados);
         ? error.message
         : "Não foi possível criar a reserva.";
 
-    return NextResponse.json(
-      { mensagem },
-      { status: 400 }
-    );
+    return NextResponse.json({ mensagem }, { status: 400 });
   }
 }

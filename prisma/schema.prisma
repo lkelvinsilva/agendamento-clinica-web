@@ -24,6 +24,7 @@ model Reserva {
   status         String   @default("pendente")
   formaPagamento String?  @map("forma_pagamento")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(6)
 
   @@map("reservas")
 }

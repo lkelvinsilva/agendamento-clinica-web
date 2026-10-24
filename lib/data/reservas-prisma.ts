@@ -20,6 +20,12 @@ const horariosManha = ["08:00", "09:00", "10:00", "11:00"];
 const horariosTarde = ["13:00", "14:00", "15:00", "16:00"];
 const horariosNoite = ["18:00", "19:00", "20:00", "21:00"];
 
+const todosHorarios = [
+  ...horariosManha,
+  ...horariosTarde,
+  ...horariosNoite,
+];
+
 function validarData(data: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
     throw new Error("Data da reserva inválida.");
@@ -45,8 +51,37 @@ function calcularValor(modalidade: string) {
   throw new Error("Modalidade de reserva inválida.");
 }
 
+function obterHorariosDoTurno(turno: string | null | undefined) {
+  if (turno === "manha") return horariosManha;
+  if (turno === "tarde") return horariosTarde;
+  if (turno === "noite") return horariosNoite;
+
+  return [];
+}
+
+/**
+ * Cancela reservas pendentes cujo prazo de pagamento expirou.
+ * Executada durante as operações de reserva e consulta de disponibilidade.
+ */
+async function cancelarReservasExpiradas(
+  db: typeof prisma | Parameters<Parameters<typeof prisma.$transaction>[0]>[0] = prisma
+) {
+  await db.reserva.updateMany({
+    where: {
+      status: "pendente",
+      expiresAt: {
+        lte: new Date(),
+      },
+    },
+    data: {
+      status: "cancelada",
+    },
+  });
+}
+
 export async function criarReserva(dados: CriarReservaData) {
   const dataReserva = validarData(dados.data);
+
   const horario =
     dados.horario && dados.horario !== "null"
       ? dados.horario.slice(0, 5)
@@ -57,11 +92,7 @@ export async function criarReserva(dados: CriarReservaData) {
       throw new Error("Selecione um horário válido para a reserva.");
     }
 
-    if (
-      ![...horariosManha, ...horariosTarde, ...horariosNoite].includes(
-        horario
-      )
-    ) {
+    if (!todosHorarios.includes(horario)) {
       throw new Error("O horário selecionado é inválido.");
     }
   }
@@ -74,7 +105,7 @@ export async function criarReserva(dados: CriarReservaData) {
   }
 
   if (
-    !dados.consultorioId ||
+    !dados.consultorioId?.trim() ||
     !dados.nome.trim() ||
     !dados.telefone.trim() ||
     !dados.email.trim() ||
@@ -85,13 +116,9 @@ export async function criarReserva(dados: CriarReservaData) {
 
   const horariosSolicitados =
     dados.modalidade === "diaria"
-      ? [...horariosManha, ...horariosTarde, ...horariosNoite]
+      ? todosHorarios
       : dados.modalidade === "turno"
-        ? dados.turno === "manha"
-          ? horariosManha
-          : dados.turno === "tarde"
-            ? horariosTarde
-            : horariosNoite
+        ? obterHorariosDoTurno(dados.turno)
         : horario
           ? [horario]
           : [];
@@ -101,6 +128,9 @@ export async function criarReserva(dados: CriarReservaData) {
   fimDia.setUTCDate(fimDia.getUTCDate() + 1);
 
   return prisma.$transaction(async (tx) => {
+    // Libera reservas vencidas antes de verificar os horários.
+    await cancelarReservasExpiradas(tx);
+
     const existentes = await tx.reserva.findMany({
       where: {
         consultorioId: dados.consultorioId,
@@ -123,20 +153,11 @@ export async function criarReserva(dados: CriarReservaData) {
 
     for (const reserva of existentes) {
       if (reserva.modalidade === "diaria") {
-        [...horariosManha, ...horariosTarde, ...horariosNoite].forEach(
-          (h) => ocupados.add(h)
-        );
+        todosHorarios.forEach((h) => ocupados.add(h));
       } else if (reserva.modalidade === "turno") {
-        const lista =
-          reserva.turno === "manha"
-            ? horariosManha
-            : reserva.turno === "tarde"
-              ? horariosTarde
-              : reserva.turno === "noite"
-                ? horariosNoite
-                : [];
-
-        lista.forEach((h) => ocupados.add(h));
+        obterHorariosDoTurno(reserva.turno).forEach((h) =>
+          ocupados.add(h)
+        );
       } else if (reserva.horario) {
         ocupados.add(reserva.horario.toISOString().slice(11, 16));
       }
@@ -165,6 +186,7 @@ export async function criarReserva(dados: CriarReservaData) {
         valor: calcularValor(dados.modalidade),
         formaPagamento: dados.formaPagamento,
         status: "pendente",
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
   });
@@ -174,7 +196,8 @@ export async function buscarHorariosOcupados(
   consultorioId: string,
   data: string
 ) {
-  
+  await cancelarReservasExpiradas();
+
   const inicioDia = new Date(`${data}T00:00:00.000Z`);
   const fimDia = new Date(`${data}T00:00:00.000Z`);
   fimDia.setUTCDate(fimDia.getUTCDate() + 1);
@@ -201,20 +224,11 @@ export async function buscarHorariosOcupados(
 
   for (const reserva of reservas) {
     if (reserva.modalidade === "diaria") {
-      [...horariosManha, ...horariosTarde, ...horariosNoite].forEach(
-        (h) => ocupados.add(h)
-      );
+      todosHorarios.forEach((h) => ocupados.add(h));
     } else if (reserva.modalidade === "turno") {
-      const lista =
-        reserva.turno === "manha"
-          ? horariosManha
-          : reserva.turno === "tarde"
-            ? horariosTarde
-            : reserva.turno === "noite"
-              ? horariosNoite
-              : [];
-
-      lista.forEach((h) => ocupados.add(h));
+      obterHorariosDoTurno(reserva.turno).forEach((h) =>
+        ocupados.add(h)
+      );
     } else if (reserva.horario) {
       ocupados.add(reserva.horario.toISOString().slice(11, 16));
     }
@@ -224,6 +238,8 @@ export async function buscarHorariosOcupados(
 }
 
 export async function buscarReservaPorId(id: string) {
+  await cancelarReservasExpiradas();
+
   const reserva = await prisma.reserva.findUnique({
     where: { id },
   });
@@ -248,8 +264,25 @@ export async function cancelarReserva(id: string) {
     return reserva;
   }
 
-  return prisma.reserva.update({
+  if (reserva.status !== "pendente") {
+    throw new Error("Esta reserva não pode ser cancelada.");
+  }
+
+  const resultado = await prisma.reserva.updateMany({
+    where: {
+      id,
+      status: "pendente",
+    },
+    data: {
+      status: "cancelada",
+    },
+  });
+
+  if (resultado.count === 0) {
+    throw new Error("Não foi possível cancelar a reserva.");
+  }
+
+  return prisma.reserva.findUniqueOrThrow({
     where: { id },
-    data: { status: "cancelada" },
   });
 }

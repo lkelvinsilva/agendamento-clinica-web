@@ -4,7 +4,7 @@ import { BookingProvider } from "@/components/agendamento/BookingContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Clínica.",
+  title: "Clínica",
   description: "Consultórios preparados para o seu atendimento.",
 };
 

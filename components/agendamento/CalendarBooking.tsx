@@ -82,10 +82,19 @@ useEffect(() => {
       const resultado = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          resultado.error ?? "Erro ao consultar horários."
-        );
-      }
+  console.error("Erro ao consultar horários:", {
+    status: response.status,
+    resultado,
+    consultorioId,
+    data: formatarData(dataSelecionada),
+  });
+
+  throw new Error(
+    resultado.error ??
+      resultado.mensagem ??
+      `Erro ao consultar horários. HTTP ${response.status}.`
+  );
+}
 
       if (ativo) {
         setHorariosOcupados(resultado.horarios);

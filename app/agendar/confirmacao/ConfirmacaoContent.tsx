@@ -26,6 +26,7 @@ type Reserva = {
   formaPagamento: string | null;
 
   createdAt: Date;
+  expiresAt: string | null;
 };
 
 
@@ -54,17 +55,29 @@ export default function ConfirmacaoPage() {
       try {
         const resposta = await fetch(`/api/reservas/${reservaId}`);
 
+const dados = await resposta.json().catch(() => null);
+
 if (!resposta.ok) {
-  throw new Error("Não foi possível carregar a reserva.");
+  console.error("Erro da API de reservas:", {
+    status: resposta.status,
+    dados,
+    reservaId,
+  });
+
+  throw new Error(
+    dados?.mensagem ??
+      `Não foi possível carregar a reserva. HTTP ${resposta.status}.`
+  );
 }
 
-const dados = await resposta.json();
 setReserva(dados);
       } catch (error) {
         console.error("Erro ao carregar reserva:", error);
 
         setErro(
-          "Não foi possível carregar os dados da reserva."
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os dados da reserva."
         );
       } finally {
         setCarregando(false);
@@ -86,12 +99,9 @@ setReserva(dados);
   let cancelando = false;
 
   async function atualizarContador() {
-    const criadaEm = new Date(
-      reserva!.createdAt
-    ).getTime();
-
-    // TESTE TEMPORÁRIO: 10 segundos
-    const prazo = criadaEm + 15 * 60 * 1000;
+    const prazo = reserva!.expiresAt
+  ? new Date(reserva!.expiresAt).getTime()
+  : new Date(reserva!.createdAt).getTime() + 15 * 60 * 1000;
 
     const agora = Date.now();
 
@@ -355,19 +365,30 @@ setReserva(dados);
               </p>
             </div>
 
-            {/* Status */}
+           {/* Status */}
+<div className="mt-5 border-t border-[#E5DDD1] pt-5">
+  <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
+    Status
+  </p>
 
-            <div className="mt-5 border-t border-[#E5DDD1] pt-5">
-              <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
-                Status
-              </p>
-
-              <p className="mt-1 text-base text-[#9A7952]">
-                {reserva.status === "pendente"
-                  ? "Aguardando pagamento"
-                  : reserva.status}
-              </p>
-            </div>
+  <p
+    className={`mt-1 text-base ${
+      reserva.status === "confirmada"
+        ? "text-green-700"
+        : reserva.status === "cancelada"
+          ? "text-red-700"
+          : "text-[#9A7952]"
+    }`}
+  >
+    {reserva.status === "pendente"
+      ? "Aguardando pagamento"
+      : reserva.status === "confirmada"
+        ? "Pagamento confirmado"
+        : reserva.status === "cancelada"
+          ? "Reserva cancelada"
+          : reserva.status}
+  </p>
+</div>
 
             {/* Valor */}
 
@@ -385,62 +406,65 @@ setReserva(dados);
             </div>
           </div>
 
-          {/* PRAZO PARA PAGAMENTO */}
+          
+{/* PRAZO PARA PAGAMENTO */}
+<div className="mx-auto mt-6 max-w-lg border border-[#C8A97E] bg-[#F7F3EC] px-5 py-5">
+  <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+    Prazo para pagamento
+  </p>
 
-          <div className="mx-auto mt-6 max-w-lg border border-[#C8A97E] bg-[#F7F3EC] px-5 py-5">
+  {reserva.status === "pendente" && tempoRestante > 0 ? (
+    <>
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        Você tem até 15 minutos para realizar o pagamento e garantir o horário escolhido.
+      </p>
 
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
-              Prazo para pagamento
-            </p>
+      <div className="mt-4 text-center">
+        <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
+          Tempo restante
+        </p>
 
-            {reserva.status === "pendente" &&
-            tempoRestante > 0 ? (
-              <>
-                <p className="mt-2 text-sm leading-6 text-[#746C62]">
-                  Você tem até 15 minutos para realizar o
-                  pagamento e garantir o horário escolhido.
-                </p>
+        <p className="mt-1 font-serif text-4xl text-[#27231F]">
+          {minutos}:{segundos}
+        </p>
+      </div>
 
-                <div className="mt-4 text-center">
-                  <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
-                    Tempo restante
-                  </p>
+      <p className="mt-4 text-xs leading-5 text-[#746C62]">
+        Caso o pagamento não seja realizado dentro desse prazo, a reserva será cancelada e o horário ficará novamente disponível.
+      </p>
 
-                  <p className="mt-1 font-serif text-4xl text-[#27231F]">
-                    {minutos}:{segundos}
-                  </p>
-                </div>
+      <Link
+        href={`/agendar/pagamento?consultorio=${reserva.consultorioId}&data=${String(reserva.data).slice(0, 10)}&modalidade=${reserva.modalidade}${reserva.horario ? `&horario=${new Date(reserva.horario).toISOString().slice(11, 16)}` : ""}${reserva.turno ? `&turno=${reserva.turno}` : ""}`}
+        className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
+      >
+        Ir para pagamento
+      </Link>
+    </>
+  ) : (
+    <div className="mt-3">
+      <p
+        className={`text-sm font-medium ${
+          reserva.status === "confirmada"
+            ? "text-green-700"
+            : "text-red-700"
+        }`}
+      >
+        {reserva.status === "confirmada"
+          ? "Pagamento confirmado com sucesso!"
+          : reserva.status === "cancelada"
+            ? "Esta reserva foi cancelada."
+            : "O prazo para pagamento expirou."}
+      </p>
 
-                <p className="mt-4 text-xs leading-5 text-[#746C62]">
-                  Caso o pagamento não seja realizado dentro
-                  desse prazo, a reserva será cancelada e o
-                  horário ficará novamente disponível.
-                </p>
+      <p className="mt-2 text-sm leading-6 text-[#746C62]">
+        {reserva.status === "confirmada"
+          ? "Sua reserva está confirmada."
+          : "O horário poderá ser reservado novamente."}
+      </p>
+    </div>
+  )}
+</div>
 
-                
-<Link
-  href={`/agendar/pagamento?consultorio=${reserva.consultorioId}&data=${String(reserva.data).slice(0, 10)}&modalidade=${reserva.modalidade}${reserva.horario ? `&horario=${new Date(reserva.horario).toISOString().slice(11, 16)}` : ""}${reserva.turno ? `&turno=${reserva.turno}` : ""}`}
-  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
->
-  Ir para pagamento
-</Link>
-
-              </>
-            ) : (
-              <div className="mt-3">
-
-                <p className="text-sm font-medium text-red-700">
-                  O prazo para pagamento expirou.
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-[#746C62]">
-                  Esta reserva foi cancelada e o horário ficará
-                  novamente disponível.
-                </p>
-
-              </div>
-            )}
-          </div>
 
           {/* Voltar */}
 

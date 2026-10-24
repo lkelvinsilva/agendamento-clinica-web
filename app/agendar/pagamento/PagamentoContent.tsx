@@ -110,23 +110,13 @@ if (!response.ok) {
   );
 }
 
-// A API retorna a reserva diretamente
+// A API retorna a reserva criada.
 const reserva = resultado;
 
-if (!response.ok) {
-  console.error("Status da API:", response.status);
-  console.error("Resposta da API:", resultado);
+// Redireciona para a confirmação, mantendo a reserva pendente.
+router.push(`/agendar/confirmacao?reserva=${reserva.id}`);
+return;
 
-  throw new Error(
-    resultado.mensagem ||
-      resultado.error ||
-      "Erro ao salvar a reserva."
-  );
-}
-
-router.push(
-  `/agendar/confirmacao?reserva=${reserva.id}`
-);
 } catch (error) {
 
       setErro(

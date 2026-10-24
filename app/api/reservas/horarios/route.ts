@@ -33,11 +33,17 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ horarios });
   } catch (error) {
-    console.error("Erro ao consultar horários:", error);
+  console.error("Erro ao consultar horários:", error);
 
-    return NextResponse.json(
-      { error: "Não foi possível consultar os horários." },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      error: "Não foi possível consultar os horários.",
+      detalhes:
+        error instanceof Error
+          ? error.message
+          : String(error),
+    },
+    { status: 500 }
+  );
+}
 }
