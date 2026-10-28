@@ -1,9 +1,14 @@
+
 const local = {
-  endereco: "",
+  endereco:
+    "Rua Eucalipto, 178 — Cajazeiras, Fortaleza - CE, CEP 60864-525",
   horario: "Segunda a sábado",
-  mapsUrl: "",
-  embedUrl: "",
+  mapsUrl:
+    "https://www.google.com/maps/search/?api=1&query=Rua+Eucalipto%2C+178%2C+Cajazeiras%2C+Fortaleza+-+CE",
+  embedUrl:
+    "https://maps.google.com/maps?q=Rua%20Eucalipto%2C%20178%2C%20Cajazeiras%2C%20Fortaleza%20CE%2060864-525&output=embed",
 };
+
 
 const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9A7952] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F3EC]";
@@ -69,7 +74,7 @@ export function Localizacao() {
                 rel="noopener noreferrer"
                 className={`group mt-8 inline-flex items-center gap-3 rounded-full bg-[#9A7952] px-7 py-3.5 text-sm font-medium text-white transition duration-300 hover:bg-[#806342] ${focusRing}`}
               >
-                Abrir no Google Maps
+                Como chegar à clínica
 
                 <svg
                   aria-hidden="true"

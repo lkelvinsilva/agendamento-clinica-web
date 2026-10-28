@@ -58,7 +58,7 @@ export function Navbar() {
 >
     
 <Image
-  src="/livv_minimalista.png"
+  src="/livv_logo_transparente.png"
   alt="Clínica Livv"
   width={190}
   height={58}
