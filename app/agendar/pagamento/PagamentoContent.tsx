@@ -13,7 +13,7 @@ export default function PagamentoPage() {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<
-  "cartao" | "pix" | "debito"
+  "pix" | "cartao" | "debito"
 >("pix");
 
   const router = useRouter();
@@ -41,18 +41,7 @@ export default function PagamentoPage() {
         ? 300
         : 120;
 
-  // TAXA FICTÍCIA: usada somente para visualizar o cálculo.
-  // Não representa a taxa contratada da InfinitePay.
-  const TAXA_CARTAO_TESTE = 0.042;
-
-  const valorFinal =
-    formaPagamento === "cartao"
-      ? Math.round(
-          (valorReserva / (1 - TAXA_CARTAO_TESTE)) * 100
-        ) / 100
-      : valorReserva;
-
-  const acrescimoCartao = valorFinal - valorReserva;
+  const valorFinal = valorReserva;
 
   const formatarMoeda = (valor: number) =>
     valor.toLocaleString("pt-BR", {
@@ -61,6 +50,12 @@ export default function PagamentoPage() {
     });
 
   async function confirmarReserva() {
+    if (formaPagamento !== "pix") {
+  setErro(
+    "O pagamento por cartão ainda não está disponível. Selecione Pix para continuar."
+  );
+  return;
+}
     if (
   !consultorioId ||
   !data ||
@@ -265,45 +260,58 @@ return;
   </div>
 </button>
 
-
-
-{/* INSTRUÇÕES DA FORMA DE PAGAMENTO */}
+{/* INSTRUÇÕES DE PAGAMENTO */}
 <div className="mt-6 border border-[#E5DDD1] bg-[#F7F3EC] p-5">
   {formaPagamento === "pix" ? (
     <>
       <h3 className="text-sm font-medium text-[#27231F]">
         Pagamento via Pix
       </h3>
-      <p className="mt-2 text-sm leading-6 text-[#746C62]">
-        O QR Code e o código Pix copia e cola estarão disponíveis
-        quando a integração de pagamento for ativada.
-        Por enquanto, nenhuma cobrança será realizada.
-      </p>
-    </>
-  ) : formaPagamento === "cartao" ? (
-    <>
-      <h3 className="text-sm font-medium text-[#27231F]">
-        Cartão de crédito
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-[#746C62]">
-        O processamento do cartão e as opções de parcelamento
-        estarão disponíveis após a integração de pagamento.
-        Nenhuma cobrança será realizada neste momento.
-      </p>
-    </>
-  ) : (
-    <>
-      <h3 className="text-sm font-medium text-[#27231F]">
-        Cartão de débito
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-[#746C62]">
-        O pagamento por débito dependerá do provedor escolhido.
-        Essa opção ainda não processa pagamentos reais.
-      </p>
-    </>
-  )}
-</div>
 
+
+<p className="mt-2 text-sm leading-6 text-[#746C62]">
+Faça o pagamento antecipado do valor integral da reserva.
+</p>
+
+<p className="mt-4 text-sm font-medium text-[#27231F]">
+Chave Pix
+</p>
+
+<p className="mt-1 break-all text-sm text-[#746C62]">
+{process.env.NEXT_PUBLIC_PIX_CHAVE || "Configure sua chave Pix no .env.local"}
+</p>
+
+<p className="mt-3 text-sm text-[#746C62]">
+Titular: {process.env.NEXT_PUBLIC_PIX_TITULAR || "Configure o titular no .env.local"}
+</p>
+
+<p className="mt-3 text-xs leading-5 text-[#746C62]">
+A reserva será confirmada após a verificação do recebimento.
+</p>
+</>
+) : formaPagamento === "cartao" ? (
+<>
+<h3 className="text-sm font-medium text-[#27231F]">
+Cartão de crédito
+</h3>
+<p className="mt-2 text-sm leading-6 text-[#746C62]">
+O pagamento antecipado por cartão de crédito estará disponível
+após a integração com um provedor de pagamentos.
+</p>
+</>
+) : (
+<>
+<h3 className="text-sm font-medium text-[#27231F]">
+Cartão de débito
+</h3>
+<p className="mt-2 text-sm leading-6 text-[#746C62]">
+O pagamento antecipado por cartão de débito estará disponível
+após a integração com um provedor de pagamentos.
+</p>
+</>
+)}
+
+</div>
 
             {/* SEGURANÇA */}
             <div className="mt-8 border-t border-[#E5DDD1] pt-6">
@@ -388,20 +396,6 @@ return;
     <span>Valor da reserva</span>
     <span>{formatarMoeda(valorReserva)}</span>
   </div>
-
-  {formaPagamento === "cartao" && (
-    <>
-      <div className="flex justify-between gap-4 text-sm text-[#746C62]">
-        <span>Acréscimo simulado do cartão</span>
-        <span>{formatarMoeda(acrescimoCartao)}</span>
-      </div>
-
-      <p className="text-xs leading-5 text-[#746C62]">
-        Taxa ilustrativa de 4,2%, usada apenas para teste.
-        O valor real será definido após a integração.
-      </p>
-    </>
-  )}
 
   <div className="flex items-end justify-between gap-4 border-t border-[#E5DDD1] pt-4">
     <span className="text-sm text-[#746C62]">

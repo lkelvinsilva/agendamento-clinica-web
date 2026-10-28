@@ -53,11 +53,16 @@ export async function POST(
 
     const agora = new Date();
 
-if (reserva.expiresAt && reserva.expiresAt <= agora) {
+if (
+  reserva.formaPagamento === "pix" &&
+  reserva.expiresAt &&
+  reserva.expiresAt <= agora
+) {
   await prisma.reserva.updateMany({
     where: {
       id,
       status: "pendente",
+      formaPagamento: "pix",
       expiresAt: { lte: agora },
     },
     data: {

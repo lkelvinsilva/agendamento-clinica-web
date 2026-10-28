@@ -81,7 +81,15 @@ async function cancelarReservasExpiradas(
 
 export async function criarReserva(dados: CriarReservaData) {
   const dataReserva = validarData(dados.data);
+  if (!["pix", "cartao", "debito"].includes(dados.formaPagamento)) {
+  throw new Error("Selecione uma forma de pagamento válida.");
+}
 
+if (dados.formaPagamento !== "pix") {
+  throw new Error(
+    "O pagamento por cartão ainda não está disponível. Selecione Pix."
+  );
+}
   const horario =
     dados.horario && dados.horario !== "null"
       ? dados.horario.slice(0, 5)
@@ -186,7 +194,10 @@ export async function criarReserva(dados: CriarReservaData) {
         valor: calcularValor(dados.modalidade),
         formaPagamento: dados.formaPagamento,
         status: "pendente",
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+expiresAt:
+  dados.formaPagamento === "pix"
+    ? new Date(Date.now() + 15 * 60 * 1000)
+    : null,
       },
     });
   });

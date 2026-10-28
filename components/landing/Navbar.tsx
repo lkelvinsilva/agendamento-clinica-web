@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const links = [
@@ -48,16 +49,25 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#E5DDD1] bg-[#F7F3EC]/90 backdrop-blur-xl">
       <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-6 lg:px-8">
-        {/* Marca */}
-        <Link
-          href="/"
-          className={`group inline-flex items-center rounded font-serif text-[27px] font-medium tracking-[-0.025em] text-[#27231F] ${focusRing}`}
-        >
-          Clínica 
-          <span className="ml-0.5 text-[#B99A6B] transition-colors duration-300 group-hover:text-[#9A7952]">
-             Livv
-          </span>
-        </Link>
+        
+{/* Marca */}
+<Link
+  href="/"
+  aria-label="Clínica Livv - Início"
+  className={`group inline-flex shrink-0 items-center rounded ${focusRing}`}
+>
+    
+<Image
+  src="/livv_minimalista.png"
+  alt="Clínica Livv"
+  width={190}
+  height={58}
+  priority
+  className="h-auto max-h-[58px] w-auto max-w-[190px] object-contain transition-opacity duration-300 group-hover:opacity-80"
+/>
+
+</Link>
+
 
         {/* Navegação desktop */}
         <nav
