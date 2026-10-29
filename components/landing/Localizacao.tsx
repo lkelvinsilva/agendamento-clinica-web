@@ -3,6 +3,7 @@ const local = {
   endereco:
     "Rua Eucalipto, 178 — Cajazeiras, Fortaleza - CE, CEP 60864-525",
   horario: "Segunda a sábado",
+  estacionamento: "Estacionamento gratuito",
   mapsUrl:
     "https://www.google.com/maps/search/?api=1&query=Rua+Eucalipto%2C+178%2C+Cajazeiras%2C+Fortaleza+-+CE",
   embedUrl:
@@ -45,28 +46,49 @@ export function Localizacao() {
             </p>
 
             {/* Informações */}
-            <dl className="mt-10 border-y border-[#D8CCBC]">
-              <div className="grid gap-2 py-6 sm:grid-cols-[110px_1fr] sm:gap-6">
-                <dt className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
-                  Endereço
-                </dt>
+            
+<dl className="mt-10 border-y border-[#D8CCBC]">
+  <div className="grid gap-2 py-6 sm:grid-cols-[110px_1fr] sm:gap-6">
+    <dt className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+      Endereço
+    </dt>
+    <dd className="text-sm leading-6 text-[#27231F] sm:text-base">
+      {local.endereco || "Endereço em breve"}
+    </dd>
+  </div>
 
-                <dd className="text-sm leading-6 text-[#27231F] sm:text-base">
-                  {local.endereco || "Endereço em breve"}
-                </dd>
-              </div>
+  <div className="grid gap-2 border-t border-[#E5DDD1] py-6 sm:grid-cols-[110px_1fr] sm:gap-6">
+    <dt className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+      Atendimento
+    </dt>
+    <dd className="text-sm leading-6 text-[#27231F] sm:text-base">
+      {local.horario}
+    </dd>
+  </div>
 
-              <div className="grid gap-2 border-t border-[#E5DDD1] py-6 sm:grid-cols-[110px_1fr] sm:gap-6">
-                <dt className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
-                  Atendimento
-                </dt>
-
-                <dd className="text-sm leading-6 text-[#27231F] sm:text-base">
-                  {local.horario}
-                </dd>
-              </div>
-            </dl>
-
+  <div className="grid gap-2 border-t border-[#E5DDD1] py-6 sm:grid-cols-[110px_1fr] sm:gap-6">
+    <dt className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
+      Comodidade
+    </dt>
+    <dd className="flex items-center gap-2 text-sm leading-6 text-[#27231F] sm:text-base">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-5 w-5 shrink-0 text-[#9A7952]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11" />
+        <path d="M3 11h18v7H3z" />
+        <path d="M5 18v2m14-2v2M6 14h.01M18 14h.01" />
+      </svg>
+      <span>{local.estacionamento}</span>
+    </dd>
+  </div>
+</dl>
             {local.mapsUrl && (
               <a
                 href={local.mapsUrl}

@@ -15,7 +15,7 @@ export async function POST() {
         email: "teste@exemplo.com",
         cpf: "00000000000",
         observacoes: "Reserva criada apenas para teste local",
-        valor: 120,
+        valor: 80,
         status: "pendente",
         formaPagamento: "pix",
       },

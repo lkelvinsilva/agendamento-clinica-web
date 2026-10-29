@@ -39,7 +39,7 @@ export default function PagamentoPage() {
       ? 900
       : modalidade === "turno"
         ? 300
-        : 120;
+        : 80;
 
   const valorFinal = valorReserva;
 

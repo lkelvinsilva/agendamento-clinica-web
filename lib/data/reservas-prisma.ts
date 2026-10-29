@@ -44,7 +44,7 @@ function validarData(data: string) {
 }
 
 function calcularValor(modalidade: string) {
-  if (modalidade === "horario") return 120;
+  if (modalidade === "horario") return 80;
   if (modalidade === "turno") return 300;
   if (modalidade === "diaria") return 900;
 
