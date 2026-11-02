@@ -4,17 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import {
-  buscarReservaPorId,
-  cancelarReserva,
-} from "@/lib/data/reservas";
 import { consultorios } from "@/lib/data/consultorios";
+
 
 type Reserva = {
   id: string;
-  consultorio_id: string;
-  data: string;
-  horario: string | null;
+  consultorioId: string;
+  data: Date;
+  horario: Date | null;
   modalidade: string;
   turno: string | null;
 
@@ -24,12 +21,14 @@ type Reserva = {
   cpf: string;
   observacoes: string | null;
 
-  valor: number;
+  valor: import("@/generated/prisma/client").Prisma.Decimal;
   status: string;
-  forma_pagamento: string | null;
+  formaPagamento: string | null;
 
-  created_at: string;
+  createdAt: Date;
+  expiresAt: string | null;
 };
+
 
 export default function ConfirmacaoPage() {
   const searchParams = useSearchParams();
@@ -54,14 +53,31 @@ export default function ConfirmacaoPage() {
       }
 
       try {
-        const dados = await buscarReservaPorId(reservaId);
+        const resposta = await fetch(`/api/reservas/${reservaId}`);
 
-        setReserva(dados);
+const dados = await resposta.json().catch(() => null);
+
+if (!resposta.ok) {
+  console.error("Erro da API de reservas:", {
+    status: resposta.status,
+    dados,
+    reservaId,
+  });
+
+  throw new Error(
+    dados?.mensagem ??
+      `Não foi possível carregar a reserva. HTTP ${resposta.status}.`
+  );
+}
+
+setReserva(dados);
       } catch (error) {
         console.error("Erro ao carregar reserva:", error);
 
         setErro(
-          "Não foi possível carregar os dados da reserva."
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os dados da reserva."
         );
       } finally {
         setCarregando(false);
@@ -76,19 +92,20 @@ export default function ConfirmacaoPage() {
   // =========================================================
 
  useEffect(() => {
-  if (!reserva || reserva.status !== "pendente") {
+  if (
+    !reserva ||
+    reserva.status !== "pendente" ||
+    reserva.formaPagamento !== "pix"
+  ) {
     return;
   }
 
   let cancelando = false;
 
   async function atualizarContador() {
-    const criadaEm = new Date(
-      reserva!.created_at
-    ).getTime();
-
-    // TESTE TEMPORÁRIO: 10 segundos
-    const prazo = criadaEm + 15 * 60 * 1000;
+    const prazo = reserva!.expiresAt
+  ? new Date(reserva!.expiresAt).getTime()
+  : new Date(reserva!.createdAt).getTime() + 15 * 60 * 1000;
 
     const agora = Date.now();
 
@@ -109,9 +126,18 @@ export default function ConfirmacaoPage() {
       );
 
       try {
-        const resultado = await cancelarReserva(
-          reserva!.id
-        );
+  const resposta = await fetch(
+    `/api/reservas/${reserva!.id}/cancelar`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!resposta.ok) {
+    throw new Error("Não foi possível cancelar a reserva.");
+  }
+
+  const resultado = await resposta.json();
 
         console.log(
           "✅ RESERVA CANCELADA:",
@@ -204,14 +230,17 @@ export default function ConfirmacaoPage() {
   // =========================================================
 
   const consultorio = consultorios.find(
-    (item) => item.id === reserva.consultorio_id
+    (item) => item.id === reserva.consultorioId
   );
 
   const valorReserva = Number(reserva.valor);
 
-  const dataFormatada = new Date(
-    `${reserva.data}T00:00:00`
-  ).toLocaleDateString("pt-BR");
+  const dataFormatada = new Date(reserva.data).toLocaleDateString(
+  "pt-BR",
+  {
+    timeZone: "UTC",
+  }
+);
 
   const minutos = Math.floor(
     tempoRestante / 60
@@ -282,7 +311,7 @@ export default function ConfirmacaoPage() {
 
               <p className="mt-1 text-base text-[#27231F]">
                 {consultorio?.name ??
-                  reserva.consultorio_id}
+                  reserva.consultorioId}
               </p>
             </div>
 
@@ -335,24 +364,35 @@ export default function ConfirmacaoPage() {
           ? "Noite (18:00 às 21:00)"
           : "Turno não informado"
     : reserva.horario
-      ? reserva.horario.slice(0, 5)
-      : "Horário não informado"}
+  ? new Date(reserva.horario).toISOString().slice(11, 16)
+  : "Horário não informado"}
               </p>
             </div>
 
-            {/* Status */}
+           {/* Status */}
+<div className="mt-5 border-t border-[#E5DDD1] pt-5">
+  <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
+    Status
+  </p>
 
-            <div className="mt-5 border-t border-[#E5DDD1] pt-5">
-              <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
-                Status
-              </p>
-
-              <p className="mt-1 text-base text-[#9A7952]">
-                {reserva.status === "pendente"
-                  ? "Aguardando pagamento"
-                  : reserva.status}
-              </p>
-            </div>
+  <p
+    className={`mt-1 text-base ${
+      reserva.status === "confirmada"
+        ? "text-green-700"
+        : reserva.status === "cancelada"
+          ? "text-red-700"
+          : "text-[#9A7952]"
+    }`}
+  >
+    {reserva.status === "pendente"
+      ? "Aguardando pagamento"
+      : reserva.status === "confirmada"
+        ? "Pagamento confirmado"
+        : reserva.status === "cancelada"
+          ? "Reserva cancelada"
+          : reserva.status}
+  </p>
+</div>
 
             {/* Valor */}
 
@@ -370,60 +410,54 @@ export default function ConfirmacaoPage() {
             </div>
           </div>
 
-          {/* PRAZO PARA PAGAMENTO */}
+          
+{/* PRAZO PARA PAGAMENTO */}
+  {reserva.formaPagamento === "pix" ? (
+  <div className="mx-auto mt-6 max-w-lg border border-[#E5DDD1] bg-[#F7F3EC] px-5 py-5">
+    <h2 className="text-lg font-semibold text-[#27231F]">
+      Prazo para pagamento
+    </h2>
 
-          <div className="mx-auto mt-6 max-w-lg border border-[#C8A97E] bg-[#F7F3EC] px-5 py-5">
+    {reserva.status === "pendente" && tempoRestante > 0 ? (
+      <>
+        <p className="mt-2 text-sm text-[#746C62]">
+          Você tem até 15 minutos para realizar o pagamento e garantir o horário escolhido.
+        </p>
 
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#9A7952]">
-              Prazo para pagamento
-            </p>
+        <div className="mt-4 text-3xl font-semibold text-[#9A7952]">
+          {minutos}:{segundos}
+        </div>
 
-            {reserva.status === "pendente" &&
-            tempoRestante > 0 ? (
-              <>
-                <p className="mt-2 text-sm leading-6 text-[#746C62]">
-                  Você tem até 15 minutos para realizar o
-                  pagamento e garantir o horário escolhido.
-                </p>
+        <p className="mt-2 text-sm text-[#746C62]">
+          Caso o pagamento não seja realizado dentro desse prazo, a reserva será cancelada automaticamente.
+        </p>
 
-                <div className="mt-4 text-center">
-                  <p className="text-xs uppercase tracking-[0.12em] text-[#746C62]">
-                    Tempo restante
-                  </p>
+        <Link
+          href={`/agendar/pagamento?reservaId=${reserva.id}`}
+          className="mt-5 inline-block bg-[#9A7952] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#806443]"
+        >
+          Ir para pagamento
+        </Link>
+      </>
+    ) : (
+      <div className="mt-3">
+        <p className="text-sm text-[#746C62]">
+          {reserva.status === "confirmada"
+            ? "Pagamento confirmado com sucesso!"
+            : reserva.status === "cancelada"
+              ? "Esta reserva foi cancelada."
+              : "O prazo para pagamento expirou."}
+        </p>
 
-                  <p className="mt-1 font-serif text-4xl text-[#27231F]">
-                    {minutos}:{segundos}
-                  </p>
-                </div>
-
-                <p className="mt-4 text-xs leading-5 text-[#746C62]">
-                  Caso o pagamento não seja realizado dentro
-                  desse prazo, a reserva será cancelada e o
-                  horário ficará novamente disponível.
-                </p>
-
-                <Link
-                  href={`/agendar/pagamento?consultorio=${reserva.consultorio_id}&data=${reserva.data}&modalidade=${reserva.modalidade}${reserva.horario ? `&horario=${reserva.horario.slice(0, 5)}` : ""}${reserva.turno ? `&turno=${reserva.turno}` : ""}`}
-                  className="mt-5 inline-flex w-full items-center justify-center border border-[#9A7952] bg-[#9A7952] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#806341]"
-                >
-                  Ir para pagamento
-                </Link>
-              </>
-            ) : (
-              <div className="mt-3">
-
-                <p className="text-sm font-medium text-red-700">
-                  O prazo para pagamento expirou.
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-[#746C62]">
-                  Esta reserva foi cancelada e o horário ficará
-                  novamente disponível.
-                </p>
-
-              </div>
-            )}
-          </div>
+        <p className="mt-2 text-sm text-[#746C62]">
+          {reserva.status === "confirmada"
+            ? "Sua reserva está confirmada."
+            : "O horário poderá ser reservado novamente."}
+        </p>
+      </div>
+    )}
+  </div>
+) : null}
 
           {/* Voltar */}
 

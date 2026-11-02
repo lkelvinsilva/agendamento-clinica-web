@@ -25,26 +25,37 @@ function formatPrice(value: number | string) {
   }).format(number);
 }
 
+
 const highlights = [
-  { title: "Reserva por hora", text: "Pague apenas pelo tempo que utilizar." },
-  { title: "Sala de espera inclusa", text: "Acolhimento para seus pacientes." },
-  { title: "Agenda online", text: "Escolha data e horário em poucos cliques." },
+  {
+    title: "Locação flexível",
+    text: "Reserve por hora, turno ou diária, conforme sua necessidade.",
+  },
+  {
+    title: "Recepção inclusa",
+    text: "Mais comodidade para receber seus pacientes.",
+  },
+  {
+    title: "Reserva online",
+    text: "Consulte as disponibilidades e escolha seu período.",
+  },
 ];
 
 const steps = [
   {
-    title: "Escolha o consultório",
-    text: "Compare estrutura e valores e selecione o espaço ideal.",
+    title: "Encontre seu espaço",
+    text: "Conheça os consultórios e escolha o ambiente adequado à sua especialidade.",
   },
   {
-    title: "Defina data e horário",
-    text: "Veja a agenda e reserve o período que precisar.",
+    title: "Escolha seu período",
+    text: "Defina a data e a modalidade de locação que melhor se encaixam na sua agenda.",
   },
   {
-    title: "Confirme e atenda",
-    text: "Receba a confirmação e chegue para atender com tudo pronto.",
+    title: "Reserve online",
+    text: "Siga as etapas da reserva e organize seu próximo atendimento.",
   },
 ];
+
 
 function CheckIcon() {
   return (
@@ -98,10 +109,11 @@ export default function ConsultoriosPage() {
               </h1>
 
               <p className="mt-7 max-w-xl text-lg leading-8 text-[#746C62]">
-                Dois ambientes equipados, com sala de espera e reserva por
-                hora. Escolha o que combina com o seu atendimento e agende
-                online.
-              </p>
+  Consultórios para profissionais de odontologia, harmonização
+  facial, psicologia e nutrição. Escolha o ambiente ideal para
+  sua prática e reserve por hora, turno ou diária, com a
+  flexibilidade que sua rotina pede.
+</p>
 
               <div className="mt-9 flex flex-wrap gap-3">
                 <Link
