@@ -207,45 +207,63 @@ export async function buscarHorariosOcupados(
   consultorioId: string,
   data: string
 ) {
-  await cancelarReservasExpiradas();
-
-  const inicioDia = new Date(`${data}T00:00:00.000Z`);
-  const fimDia = new Date(`${data}T00:00:00.000Z`);
-  fimDia.setUTCDate(fimDia.getUTCDate() + 1);
-
-  const reservas = await prisma.reserva.findMany({
-    where: {
-      consultorioId,
-      data: {
-        gte: inicioDia,
-        lt: fimDia,
-      },
-      status: {
-        not: "cancelada",
-      },
-    },
-    select: {
-      horario: true,
-      modalidade: true,
-      turno: true,
-    },
+  console.log("[HORARIOS] Iniciando consulta:", {
+    consultorioId,
+    data,
   });
 
-  const ocupados = new Set<string>();
+  try {
+    console.log("[HORARIOS] Verificando reservas expiradas...");
 
-  for (const reserva of reservas) {
-    if (reserva.modalidade === "diaria") {
-      todosHorarios.forEach((h) => ocupados.add(h));
-    } else if (reserva.modalidade === "turno") {
-      obterHorariosDoTurno(reserva.turno).forEach((h) =>
-        ocupados.add(h)
-      );
-    } else if (reserva.horario) {
-      ocupados.add(reserva.horario.toISOString().slice(11, 16));
+    await cancelarReservasExpiradas();
+
+    console.log("[HORARIOS] Reservas expiradas verificadas.");
+
+    const inicioDia = new Date(`${data}T00:00:00.000Z`);
+    const fimDia = new Date(`${data}T00:00:00.000Z`);
+    fimDia.setUTCDate(fimDia.getUTCDate() + 1);
+
+    console.log("[HORARIOS] Consultando reservas no banco...");
+
+    const reservas = await prisma.reserva.findMany({
+      where: {
+        consultorioId,
+        data: {
+          gte: inicioDia,
+          lt: fimDia,
+        },
+        status: {
+          not: "cancelada",
+        },
+      },
+      select: {
+        horario: true,
+        modalidade: true,
+        turno: true,
+      },
+    });
+
+    console.log("[HORARIOS] Reservas encontradas:", reservas.length);
+
+    const ocupados = new Set<string>();
+
+    for (const reserva of reservas) {
+      if (reserva.modalidade === "diaria") {
+        todosHorarios.forEach((h) => ocupados.add(h));
+      } else if (reserva.modalidade === "turno") {
+        obterHorariosDoTurno(reserva.turno).forEach((h) =>
+          ocupados.add(h)
+        );
+      } else if (reserva.horario) {
+        ocupados.add(reserva.horario.toISOString().slice(11, 16));
+      }
     }
-  }
 
-  return [...ocupados];
+    return [...ocupados];
+  } catch (error) {
+    console.error("[HORARIOS] Erro detalhado:", error);
+    throw error;
+  }
 }
 
 export async function buscarReservaPorId(id: string) {
