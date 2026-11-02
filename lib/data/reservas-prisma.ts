@@ -262,27 +262,17 @@ export async function buscarReservaPorId(id: string) {
   return reserva;
 }
 
+
 export async function cancelarReserva(id: string) {
-  const reserva = await prisma.reserva.findUnique({
-    where: { id },
-  });
-
-  if (!reserva) {
-    throw new Error("Reserva não encontrada.");
-  }
-
-  if (reserva.status === "cancelada") {
-    return reserva;
-  }
-
-  if (reserva.status !== "pendente") {
-    throw new Error("Esta reserva não pode ser cancelada.");
-  }
+  const agora = new Date();
 
   const resultado = await prisma.reserva.updateMany({
     where: {
       id,
       status: "pendente",
+      expiresAt: {
+        lte: agora,
+      },
     },
     data: {
       status: "cancelada",
@@ -290,7 +280,23 @@ export async function cancelarReserva(id: string) {
   });
 
   if (resultado.count === 0) {
-    throw new Error("Não foi possível cancelar a reserva.");
+    const reserva = await prisma.reserva.findUnique({
+      where: { id },
+    });
+
+    if (!reserva) {
+      throw new Error("Reserva não encontrada.");
+    }
+
+    if (reserva.status === "cancelada") {
+      return reserva;
+    }
+
+    if (reserva.status === "confirmada") {
+      throw new Error("Esta reserva já foi confirmada.");
+    }
+
+    throw new Error("O prazo de pagamento ainda não terminou.");
   }
 
   return prisma.reserva.findUniqueOrThrow({

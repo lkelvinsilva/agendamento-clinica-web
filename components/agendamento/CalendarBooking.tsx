@@ -28,13 +28,13 @@ export function CalendarBooking({
       id: "manha",
       nome: "Manhã",
       periodo: "08:00 às 12:00",
-      horarios: ["08:00", "09:00", "10:00", "11:00"],
+      horarios: ["08:00", "09:00", "10:00", "11:00", "12:00"],
     },
     {
       id: "tarde",
       nome: "Tarde",
       periodo: "13:00 às 17:00",
-      horarios: ["13:00", "14:00", "15:00", "16:00"],
+      horarios: ["13:00", "14:00", "15:00", "16:00", "17:00"],
     },
     {
       id: "noite",
