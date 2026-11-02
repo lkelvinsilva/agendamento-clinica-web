@@ -518,32 +518,7 @@ export default function PagamentoPage() {
                   Escolha como pagar
                 </h2>
 
-                <div className="mt-6 border border-[#C8A97E] bg-[#F7F3EC] p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-[#9A7952]">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#9A7952]" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-[#27231F]">
-                        Pix
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-[#746C62]">
-                        Pagamento antecipado via Pix.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                
-                  <p className="mt-1 break-all text-sm text-[#746C62]">
-                    {process.env.NEXT_PUBLIC_PIX_CHAVE ||
-                      "Configure sua chave Pix no .env.local"}
-                  </p>
-                  <p className="mt-3 text-sm text-[#746C62]">
-                    Titular:{" "}
-                    {process.env.NEXT_PUBLIC_PIX_TITULAR ||
-                      "Configure o titular no .env.local"}
-                  </p>               
+                     
                 
 <div className="mt-8 space-y-3">
   <p className="mb-4 text-sm font-medium text-[#27231F]">
